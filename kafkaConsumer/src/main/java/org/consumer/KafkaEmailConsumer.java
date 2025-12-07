@@ -26,26 +26,26 @@ public class KafkaEmailConsumer implements Runnable {
     private final int consumerIndex;
     private final ExecutorService emailExecutor;
 
-    // 1. Field to store the dynamic batch size
+    // Configurable Settings
     private final int batchSize;
+    private final long pollDurationMs;
 
     private final AtomicBoolean running = new AtomicBoolean(true);
     private KafkaConsumer<String, String> consumer;
 
-    // 2. Updated Constructor
-    public KafkaEmailConsumer(String topic, String groupId, int consumerIndex, ExecutorService emailExecutor, int batchSize) {
+    public KafkaEmailConsumer(String topic, String groupId, int consumerIndex,
+                              ExecutorService emailExecutor, int batchSize, long pollDurationMs) {
         this.topic = topic;
         this.groupId = groupId;
         this.consumerIndex = consumerIndex;
         this.emailExecutor = emailExecutor;
-        this.batchSize = batchSize; // Store the value passed from Main
+        this.batchSize = batchSize;
+        this.pollDurationMs = pollDurationMs; // Store the custom wait time
     }
 
     public void shutdown() {
         running.set(false);
-        if (consumer != null) {
-            consumer.wakeup();
-        }
+        if (consumer != null) consumer.wakeup();
     }
 
     @Override
@@ -57,66 +57,65 @@ public class KafkaEmailConsumer implements Runnable {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-
-        // 3. Apply the dynamic batch size
-        // If Main passed 10, this is 10. If Main passed 40, this is 40.
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(batchSize));
 
         try {
             consumer = new KafkaConsumer<>(props);
             consumer.subscribe(Arrays.asList(topic));
-            logger.info("Started consumer {} for topic: {} with BatchSize: {}", consumerIndex, topic, batchSize);
+            logger.info("Started Consumer {} | Topic: {} | Batch: {} | Wait: {}ms",
+                    consumerIndex, topic, batchSize, pollDurationMs);
 
             while (running.get()) {
                 ConsumerRecords<String, String> records;
-
                 try {
-                    records = consumer.poll(Duration.ofMillis(100));
-                } catch (WakeupException e) {
-                    continue;
-                }
+                    // USE DYNAMIC WAIT TIME HERE
+                    records = consumer.poll(Duration.ofMillis(pollDurationMs));
+                } catch (WakeupException e) { continue; }
 
                 if (records.isEmpty()) continue;
 
-                List<CompletableFuture<Void>> futures = new ArrayList<>();
-
+                List<EmailSender.EmailRequest> emailBatch = new ArrayList<>();
                 for (ConsumerRecord<String, String> record : records) {
-                    CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                        try {
-                            JSONObject json = new JSONObject(record.value());
-                            String to = json.getString("to");
-                            String subject = json.getString("subject");
-                            String body = json.getString("body");
-                            long creationTime = json.getLong("createdAt");
+                    try {
+                        JSONObject json = new JSONObject(record.value());
 
-                            EmailSender.sendEmail(to, subject, body);
+                        // Extract creation time from Producer
+                        long createdAt = json.has("createdAt") ? json.getLong("createdAt") : System.currentTimeMillis();
 
-                            long sendTime = System.currentTimeMillis();
-                            logger.info("Topic: {} | Consumer: {} | Created: {} | Sent: {}",
-                                    topic, consumerIndex, creationTime, sendTime);
-
-                        } catch (JSONException e) {
-                            logger.warn("SKIPPING bad JSON in {}", topic);
-                        } catch (Exception e) {
-                            logger.error("Retry needed: {}", e.getMessage());
-                            throw new RuntimeException(e);
-                        }
-                    }, emailExecutor);
-                    futures.add(future);
+                        emailBatch.add(new EmailSender.EmailRequest(
+                                json.getString("to"),
+                                json.getString("subject"),
+                                json.getString("body"),
+                                createdAt // Pass it here
+                        ));
+                    } catch (JSONException e) {
+                        logger.error("Skipping bad JSON");
+                    }
                 }
 
-                try {
-                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                if (emailBatch.isEmpty()) {
                     consumer.commitSync();
-                } catch (Exception e) {
-                    logger.error("Batch failed. Not committing.");
+                    continue;
                 }
+
+                // Async Send (Waits for completion before next poll)
+                CompletableFuture.runAsync(() -> {
+                    long start = System.currentTimeMillis();
+
+                    EmailSender.sendBatch(emailBatch);
+
+                    long duration = System.currentTimeMillis() - start;
+                    logger.info("Consumer {} sent {} emails in {}ms",
+                            consumerIndex, emailBatch.size(), duration);
+
+                }, emailExecutor).join();
+
+                consumer.commitSync();
             }
         } catch (Exception e) {
-            logger.error("Critical Error: {}", e.getMessage(), e);
+            logger.error("Consumer Error", e);
         } finally {
             if (consumer != null) consumer.close();
-            logger.info("Consumer {} stopped gracefully.", consumerIndex);
         }
     }
 }
