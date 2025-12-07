@@ -1,43 +1,94 @@
 package org.consumer;
 
-import jakarta.mail.Message;
-import jakarta.mail.Session;
-import jakarta.mail.Transport;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class EmailSender {
 
-    private static final String MAILHOG_HOST = "localhost";
-    private static final int MAILHOG_PORT = 1025;
+    private static final Logger logger = LoggerFactory.getLogger(EmailSender.class);
+
+    private static final String MAILGUN_URL = "http://localhost:8080/v3/sandbox.mailgun.org/messages";
+    private static final String API_KEY = "api:key-fake";
     private static final String FROM_EMAIL = "sender@example.com";
 
-    // 1. Declare Session as static final so it is created only ONCE.
-    private static final Session session;
+    // REPLACES 'static Session'
+    private static final HttpClient client = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
-    static {
-        // This block runs once when the class is loaded
-        Properties mailProps = new Properties();
-        mailProps.put("mail.smtp.host", MAILHOG_HOST);
-        mailProps.put("mail.smtp.port", MAILHOG_PORT);
+    public static class EmailRequest {
+        public String to;
+        public String subject;
+        public String body;
+        public long creationTime; // ADDED THIS
 
-        // Create the session and store it for reuse
-        session = Session.getInstance(mailProps, null);
+        public EmailRequest(String to, String subject, String body, long creationTime) {
+            this.to = to;
+            this.subject = subject;
+            this.body = body;
+            this.creationTime = creationTime;
+        }
     }
 
-    public static void sendEmail(String to, String subject, String body) throws Exception {
-        // 2. Reuse the existing session (Thread-safe)
-        MimeMessage message = new MimeMessage(session);
+    public static void sendBatch(List<EmailRequest> batch) {
+        if (batch == null || batch.isEmpty()) return;
 
-        message.setFrom(new InternetAddress(FROM_EMAIL));
-        message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
-        message.setSubject(subject);
-        message.setText(body);
+        List<CompletableFuture<Void>> futures = batch.stream()
+                .map(email -> sendAsync(email))
+                .collect(Collectors.toList());
 
-        // 3. Send the message
-        // Note: This still opens a new TCP connection for every email.
-        Transport.send(message);
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    }
+
+    private static CompletableFuture<Void> sendAsync(EmailRequest email) {
+        String formData = buildFormData(email.to, email.subject, email.body);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(MAILGUN_URL))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString(API_KEY.getBytes()))
+                .POST(HttpRequest.BodyPublishers.ofString(formData))
+                .build();
+
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    // --- YOUR LOGGING IS HERE NOW ---
+                    if (response.statusCode() == 200) {
+                        long sentTime = System.currentTimeMillis();
+                        long totalJourney = sentTime - email.creationTime;
+
+                        logger.info("Sent to: {} | Created: {} | Sent: {} | Lag: {}ms",
+                                email.to, email.creationTime, sentTime, totalJourney);
+                    } else {
+                        logger.error("Failed: {} | Status: {}", email.to, response.statusCode());
+                    }
+                })
+                .exceptionally(ex -> {
+                    logger.error("Error sending to {}: {}", email.to, ex.getMessage());
+                    return null;
+                });
+    }
+
+    private static String buildFormData(String to, String subject, String body) {
+        return "from=" + encode(FROM_EMAIL) +
+                "&to=" + encode(to) +
+                "&subject=" + encode(subject) +
+                "&text=" + encode(body);
+    }
+
+    private static String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }
