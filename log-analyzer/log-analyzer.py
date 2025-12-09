@@ -39,11 +39,19 @@ def analyze_logs_to_csv(input_file, output_file):
 
     stats = defaultdict(list)
     report_id = get_report_id()
+    
+    # [NEW] Initialize error counter
+    total_errors = 0
 
     try:
         # 1. Read and Parse
         with open(input_file, 'r', encoding='utf-8') as f:
             for line in f:
+                # [NEW] Check for ERROR simply by string matching
+                if "ERROR" in line:
+                    total_errors += 1
+
+                # Check for successful send log
                 match = log_pattern.search(line)
                 if match:
                     topic = match.group('topic').strip()
@@ -54,36 +62,49 @@ def analyze_logs_to_csv(input_file, output_file):
                     exec_time_ms = sent_ts - created_ts
                     stats[(topic, consumer)].append(exec_time_ms)
 
-        # 2. Write to CSV
+        # 2. CALCULATE GRAND TOTAL (Sum of all emails in this run)
+        grand_total_mails = sum(len(times) for times in stats.values())
+
+        # 3. Write to CSV
         file_exists = os.path.isfile(output_file) and os.path.getsize(output_file) > 0
 
         with open(output_file, 'a', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
 
+            # HEADER: Added 'total_errors' to the end
             if not file_exists:
-                writer.writerow(['report_id', 'topic', 'consumer', 'total_mails', 'average_execution_time_(s)', 'max_execution_time_(s)'])
+                writer.writerow(['report_id', 'topic', 'consumer', 'total_mails', 'average_execution_time_(s)', 'max_execution_time_(s)', 'grand_total_mails', 'total_errors'])
 
+            # If stats is empty (only errors occurred), we won't enter this loop.
+            # But usually, you want at least one row or you skip writing. 
+            # If you want to record a row even if only errors happened, you'd need logic for that.
+            # For now, this writes rows only if successful mails exist.
             for (topic, consumer), times_ms in stats.items():
                 total_count = len(times_ms)
                 
-                # Math
                 avg_time_ms = sum(times_ms) / total_count
                 max_time_ms = max(times_ms)
 
-                # Convert to Seconds
                 avg_time_s = avg_time_ms / 1000.0
                 max_time_s = max_time_ms / 1000.0
                 
-                # --- CHANGED PART: Force 2 decimal places (automatically rounds 2.008 -> 2.01) ---
-                writer.writerow([report_id, topic, consumer, total_count, f"{avg_time_s:.2f}", f"{max_time_s:.2f}"])
+                # ROW: Adding 'total_errors' variable to the end of the list
+                writer.writerow([
+                    report_id, 
+                    topic, 
+                    consumer, 
+                    total_count, 
+                    f"{avg_time_s:.2f}", 
+                    f"{max_time_s:.2f}",
+                    grand_total_mails,
+                    total_errors  # <--- THIS WRITES THE ERROR COUNT
+                ])
 
-        print(f"Success! Report updated: {output_file}")
+        print(f"Success! Report updated: {output_file} (Total Errors: {total_errors})")
 
     except FileNotFoundError:
         print(f"Error: The file '{input_file}' was not found.")
 
-
-# --- Usage ---
 if __name__ == "__main__":
     analyze_logs_to_csv('C:/Users/mete/Desktop/staj/test-case/test/javaConsumer/javaConsumer/logs/email-consumer.log',
                         'log_report.csv')
