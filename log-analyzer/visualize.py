@@ -48,20 +48,32 @@ sns.barplot(
 )
 ax2.set_title('Avg Execution Time (Aggregated by Topic)')
 
-# --- Graph 3: Total Mails by Consumer (Bottom) ---
-# We use the 'consumer_label' we created to show every individual consumer
-sns.barplot(
+# Get all unique consumer labels (e.g., "High: 0", "Low: 2")
+unique_consumers = df['consumer_label'].unique()
+
+# Create a dictionary mapping: If "High" is in the name -> Red, else -> Blue
+custom_colors = {
+    label: 'red' if 'High' in label else 'blue' 
+    for label in unique_consumers
+}
+
+# --- Graph 3: Total Mails (Bottom) ---
+sns.pointplot(
     data=df,
     x='report_id',
     y='total_mails',
-    hue='consumer_label', # Shows "High: 5", "Low: 0", etc.
-    palette='magma',
+    hue='consumer_label',
+    palette=custom_colors,  # <--- CHANGED: Use the custom dictionary here
+    dodge=True,
+    linestyle='none',
+    markersize=5,
+    linewidth=1,
     ax=ax3
 )
-ax3.set_title('Total Mails Handled per Consumer')
-ax3.set_ylabel('Count of Mails')
-ax3.legend(title='Topic: Consumer', bbox_to_anchor=(1.0, 1.0), loc='upper left')
+ax3.grid(True, axis='y', alpha=0.3)
+ax3.set_title('Total Mails Handled (Point Comparison)')
+ax3.legend(bbox_to_anchor=(1.0, 1.0), loc='upper left')
 
-# 3. Final Layout
-plt.tight_layout()
-plt.show()
+# --- 4. SHOW THE PLOT ---
+plt.tight_layout()  # Fixes overlap between subplots
+plt.show()          # Actually opens the window
