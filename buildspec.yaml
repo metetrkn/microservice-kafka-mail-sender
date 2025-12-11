@@ -1,0 +1,21 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto21
+  build:
+    commands:
+      - mvn clean package -DskipTests
+      - echo "Build output:"
+      - ls -lh target
+  post_build:
+    commands:
+      - echo "Copying .jar to root as application.jar"
+      - cp target/*.jar application.jar
+      - ls -l application.jar
+
+artifacts:
+  files:
+    - application.jar
+  discard-paths: yes

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layouttemplate :: layout (~{::body})}"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3"
+>
+<head>
+    <meta charset="UTF-8"/>
+    <title>replace</title>
+</head>
+<body>
+
+<div class="section">
+    <!-- container -->
+    <div class="container">
+        <div class="mx-auto">
+            <h2>Log in</h2>
+            <form th:action="@{/login}" th:object="${loginForm}" method="post">
+                <div class="text--center" th:if="${param.error}"> Invalid username and password. </div> <div class="text--center" th:if="${param.logout}"> You have been logged out. </div>
+                <p th:if="${error}" class="error">UserName & Password Incorrect</p>
+                <div class="form-group">
+                    <label for="username">Email address</label>
+                    <input class="form-control" required type="email" name="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Lösenord</label>
+                    <input class="form-control" required type="password" name="password">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    Login
+                </button>
+                <div class="aouth-links" style="display: flex; justify-content: center;
+                        align-items: center; gap: 15px;">
+
+                    <!-- Google OAuth2 -->
+                    <a th:href="@{/oauth2/authorization/google}"
+                       class="d-inline-block mx-2"
+                       title="Continue with Google">
+                        <img src="../images/google-icon.svg"
+                             alt="Sign in with Google"
+                             style="width:50px; height:50px; transition:all 0.3s; border-radius:8px;"
+                             onmouseover="this.style.transform='scale(1.12)'; this.style.boxShadow='0 8px 20px rgba(234,67,53,0.3)'"
+                             onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                    </a>
+
+                    <!-- GitHub OAuth2 -->
+                    <a th:href="@{/oauth2/authorization/github}"
+                       class="d-inline-block mx-2"
+                       title="Continue with GitHub">
+                        <img src="../images/github-icon.svg"
+                             alt="Sign in with GitHub"
+                             style="width:50px; height:50px; transition:all 0.3s; border-radius:50%; background:#fff; padding:6px;"
+                             onmouseover="this.style.transform='scale(1.12)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.3)'"
+                             onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                    </a>
+
+                    <!-- LinkedIn OAuth2 -->
+                    <a th:href="@{/oauth2/authorization/linkedin}"
+                       class="d-inline-block mx-2"
+                       title="Continue with LinkedIn">
+                        <img src="../images/linkedin-icon.svg"
+                             alt="Sign in with LinkedIn"
+                             style="width:50px; height:50px; transition:all 0.3s; border-radius:8px; background:#0077b5; padding:6px;"
+                             onmouseover="this.style.transform='scale(1.12)'; this.style.boxShadow='0 8px 20px rgba(0,119,181,0.4)'"
+                             onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- /container -->
+</div>
+
+
+
+</body>
+</html>
