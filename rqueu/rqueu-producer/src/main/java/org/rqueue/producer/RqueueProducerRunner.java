@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.rqueue.enums.Subject;
 
 @Component
 @RequiredArgsConstructor
@@ -22,7 +23,7 @@ public class RqueueProducerRunner implements CommandLineRunner {
 
     private final RqueueMessageEnqueuer rqueueEnqueuer;
     private final RqueueEndpointManager rqueueEndpointManager;
-    private final ConfigurableApplicationContext context; // <--- INJECT CONTEXT
+    private final ConfigurableApplicationContext context;
 
     private static final String HIGH_PRIORITY_QUEUE = "high-priority-mails";
     private static final String LOW_PRIORITY_QUEUE = "low-priority-mails";
@@ -38,7 +39,7 @@ public class RqueueProducerRunner implements CommandLineRunner {
 
         executor.submit(() -> {
             try {
-                sendOneByOne(HIGH_PRIORITY_QUEUE, 10);
+                sendOneByOne(HIGH_PRIORITY_QUEUE, 10, Subject.VIP.name());
             } catch (Exception e) {
                 log.error("Error in High Priority", e);
             }
@@ -46,7 +47,7 @@ public class RqueueProducerRunner implements CommandLineRunner {
 
         executor.submit(() -> {
             try {
-                sendOneByOne(LOW_PRIORITY_QUEUE, 100);
+                sendOneByOne(LOW_PRIORITY_QUEUE, 100, Subject.STANDARD.name());
             } catch (Exception e) {
                 log.error("Error in Low Priority", e);
             }
@@ -69,17 +70,15 @@ public class RqueueProducerRunner implements CommandLineRunner {
         System.exit(0);
     }
 
-    private void sendOneByOne(String queueName, int count) {
-        // (Keep your existing logic here)
-        String type = queueName.equals(HIGH_PRIORITY_QUEUE) ? "VIP" : "Standard";
+    private void sendOneByOne(String queueName, int count, String subject) {
         Date createdAt;
 
         for (int i = 0; i < count; i++) {
             createdAt = new Date();
             EmailDTO payload = new EmailDTO(
                     "noreply@hitract.se",
-                    "user-" + i + "@" + type.toLowerCase() + ".com",
-                    type + " Alert #" + i,
+                    "user-" + i + "@student.com",
+                    subject,
                     "Please process immediately.",
                     createdAt
             );
