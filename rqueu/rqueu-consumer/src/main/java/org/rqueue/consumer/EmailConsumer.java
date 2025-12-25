@@ -1,49 +1,46 @@
 package org.rqueue.consumer;
 
+import org.rqueue.mailSender.EmailSender;
 import org.sharedLib.EmailDTO;
 import com.github.sonus21.rqueue.annotation.RqueueListener;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor // Lombok generates constructor for 'emailSender' injection
 public class EmailConsumer {
+
+    private final EmailSender emailSender;
 
     /**
      * HIGH PRIORITY QUEUE
-     * Tuning: High concurrency (5-10 threads) to ensure VIP emails go out instantly.
      */
     @RqueueListener(value = "high-priority-mails", concurrency = "5-10")
     public void onHighPriorityMessage(EmailDTO email) {
+        log.info("[VIP START] Processing email for: {}", email.getTo());
         try {
-            processEmail(email);
-            // Updated log statement
-            log.info("[VIP SUCCESS] To: {} | From: {} | Subject: '{}' | Created: {}",
-                    email.getTo(), email.getFrom(), email.getSubject(), email.getCreatedAt().getTime());
+            // Hand over to the sender service
+            emailSender.sendEmail(email);
         } catch (Exception e) {
-            log.error("[VIP FAILED] To: {} | Subject: '{}'", email.getTo(), email.getSubject(), e);
-            throw new RuntimeException("Email service failed");
+            log.error("[VIP FAILED] Could not send email to {}. Rqueue will retry.", email.getTo(), e);
+            // Re-throw exception so Rqueue knows to retry this message later
+            throw e;
         }
     }
 
     /**
      * LOW PRIORITY QUEUE
-     * Tuning: Low concurrency (1-2 threads) to save resources and avoid rate limits.
      */
     @RqueueListener(value = "low-priority-mails", concurrency = "1-2")
     public void onLowPriorityMessage(EmailDTO email) {
+        log.info("[STD START] Processing email for: {}", email.getTo());
         try {
-            processEmail(email);
-            // Updated log statement
-            log.info("[STD SUCCESS] To: {} | From: {} | Subject: '{}' | Created: {}",
-                    email.getTo(), email.getFrom(), email.getSubject(), email.getCreatedAt().getTime());
+            emailSender.sendEmail(email);
         } catch (Exception e) {
-            log.error("[STD FAILED] To: {} | Subject: '{}'", email.getTo(), email.getSubject(), e);
-            throw new RuntimeException("Email service failed");
+            log.error("[STD FAILED] Could not send email to {}. Rqueue will retry.", email.getTo(), e);
+            throw e;
         }
-    }
-
-    private void processEmail(EmailDTO email) throws InterruptedException {
-        Thread.sleep(200);
     }
 }
