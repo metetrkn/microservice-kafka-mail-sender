@@ -20,7 +20,7 @@ public class Main {
         try (KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {
             ExecutorService executor = Executors.newFixedThreadPool(2);
 
-            // Both threads work simultaneously
+            // Both threads work simultaneously, 2nd parameter is number of mails per topic
             executor.submit(() -> sendBatch(producer, "high-priority-mails", 11000));
             executor.submit(() -> sendBatch(producer, "low-priority-mails", 110000));
 
@@ -43,7 +43,6 @@ public class Main {
             String subject = type + " Alert #" + i;
             String body = "Please process immediately.";
 
-            // --- CHANGE HERE: We now add the 'createdAt' timestamp ---
             long creationTime = System.currentTimeMillis();
 
             // JSON now contains creation time

@@ -45,7 +45,6 @@ def analyze_logs_to_csv(input_file, output_file):
     total_errors = 0
 
     try:
-        # 1. Read and Parse
         with open(input_file, 'r', encoding='utf-8') as f:
             for line in f:
                 # Check for ERROR simply by string matching
@@ -116,8 +115,6 @@ def analyze_logs_to_csv(input_file, output_file):
             if not tr_exists:
                 tr_writer.writerow(['report_id', 'priority', 'avr_execution_time', 'max_execution_time'])
             
-            # Write rows for High and Low
-            # We explicitly check for 'high' and 'low' to ensure order, or iterate the dict
             for priority in ['high', 'low']:
                 times = priority_stats.get(priority)
                 if times:

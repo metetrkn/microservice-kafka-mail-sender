@@ -1,33 +1,24 @@
-Findout if increasing only threads changes performance meaningfully
-
-THIS TEST REPERATED 3 TIMES for each scenerio (TOTAL:6)
+Objective: Assess performance impact of thread count. Method: 3 repetitions across 2 scenarios (6 total tests).
 
 PARAMETERS that is used for compare
 scenerio-1
-(1 Broker) 									
-topic		RealUsage	Partitions	Consumers	Threads		Batch		query_que_ms		connectionTimeOut	Read/RequestTimeout	Replicion Factor	cpu     memory   performance_monitor
-high-pace	1000		4		4		4		5		50			10 sec			10 sec			1			10	45	 10-20
-low-pace	10000		4		4		4		50		1000			10 sec			10 sec			1			10	45	 10-20
+(1 Broker) 									                                                                                                        <BEFORE TEST PARAMETERS>            
+topic		num_mail	Partitions	Consumers	Threads		Batch		query_que_ms		connection_time_out	request_timeout	replicion_factor	cpu     memory   performance_monitor[0-100]
+high-pace	1000		4		    4		    4		    5		    50			        10 sec			    10 sec			1			        10%	    45%	     10-20
+low-pace	10000		4		    4		    4		    50		    1000			    10 sec			    10 sec			1			        10%	    45%	     10-20
 
 scnerio-2
-(1 Broker) 									
-topic		RealUsage	Partitions	Consumers	Threads		Batch		query_que_ms		connectionTimeOut	Read/RequestTimeout	Replicion Factor	cpu     memory   performance_monitor
-high-pace	1000		4		4		8		5		50			10 sec			10 sec			1			10	45	 10-20
-low-pace	10000		4		4		8		50		1000			10 sec			10 sec			1			10	45	 10-20
+(1 Broker) 									                                                                                                        <BEFORE TEST PARAMETERS>            
+topic		num_mail	Partitions	Consumers	Threads		Batch		query_que_ms		connection_time_out	request_timeout	replicion_factor	cpu     memory   performance_monitor[0-100]
+high-pace	1000		4		    4		    8		    5		    50			        10 sec			    10 sec			1			        10%	    45%	     10-20
+low-pace	10000		4		    4		    8		    50		    1000			    10 sec			    10 sec			1			        10%	    45%	     10-20
 
-UNDERSTANDING TEST
-report id: 0, 1, 2 are the result of the 1st test made with the same paremeters
-report id: 3, 4, 5 are the result of 2nd test made with new parameters
-0, 1, 2 are the same test repeated, 3, 4, 5 are the new tests with new paremeter repeated 
+Test Structure & Observation
+Baseline (IDs 0–2): Three repetitions of the initial configuration.
+New Parameters (IDs 3–5): Three repetitions of the modified configuration.
 
-While consumers continues to run (with the same parameters), results tends to be better.
-It should be result of cashing or a similar system, keep this in mind.
-
-COMPARE report_id_0,1,2 group with report_id_3,4,5 group
-
-EVAULATION OF TEST
-This test made to findout if increasing only thread numbers for each consumer affect performance
-RESULT: I have doubled threads for each topic(4 to 8), there is performance increase, but as seen not drastic
+Note: Performance consistently improves across repetitions (e.g., Run 2 > Run 0), likely due to system warm-up or caching.
+Objective: Compare the Baseline group against the New Parameters group, taking this warm-up trend into account to ensure a fair analysis.
 
 1. High Priority Mails (high-priority-mails)
 Average Execution Time: Improved by 18.28% (Dropped from 2.35s to 1.92s)
@@ -37,9 +28,9 @@ Max Execution Time: Improved by 16.76% (Dropped from 3.68s to 3.06s)
 Average Execution Time: Improved by 18.77% (Dropped from 2.78s to 2.26s)
 Max Execution Time: Improved by 17.73% (Dropped from 4.36s to 3.59s)
 
-RESULT:
-Increasing threads by it self increases the performance, but not drastically
-Each consumer (in their own topic group) shared similar workload as it should be 
+Result: 
+Doubling threads per topic (from 4 to 8) yielded a modest performance increase, but the improvement was not drastic.
+Each consumer (in their own topic group) shared similar workload as it should be.
 
 
    

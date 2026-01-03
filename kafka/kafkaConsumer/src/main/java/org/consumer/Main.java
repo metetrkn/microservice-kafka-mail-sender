@@ -19,17 +19,12 @@ public class Main {
     private static final String LOW_GROUP  = "low-group-tuned-v2";
 
     // --- TUNING CONFIGURATION ---
-
-    // HIGH: Fast, snappy, frequent checks
-    // Consumer asks to que each 75 ms if there is new mail, repeats each 75 ms until message arrives
-    // If one arrives, it sends directly, no wait time
-    // If multiple arrive at the same time in high traffic, it batches up to 5 emails before sending
     private static final int HIGH_BATCH_LIMIT = 50;
-    private static final long HIGH_WAIT_MS    = 5;
+    private static final long HIGH_WAIT_MS    = 5; // High consumers querry frequency to kafka
 
     // LOW: Efficient, bulk, patient checks
     private static final int LOW_BATCH_LIMIT  = 200;
-    private static final long LOW_WAIT_MS     = 10000;
+    private static final long LOW_WAIT_MS     = 10000; // Low consumers querry frequency to kafka
 
     // --- CONSUMER COUNTS ---
     private static final int HIGH_WORKERS = 6;
@@ -44,10 +39,9 @@ public class Main {
     private static final List<KafkaEmailConsumer> activeConsumers = new ArrayList<>();
 
     public static void main(String[] args) throws Exception {
-
         configureWireMock();
 
-        // 1. Start HIGH Priority Consumers (6 Consumers)
+        // Ensure to one consumer per worker thread
         for (int i = 0; i < HIGH_WORKERS; i++) {
             KafkaEmailConsumer consumer = new KafkaEmailConsumer(
                     HIGH_TOPIC, HIGH_GROUP, i, highWorkers,
@@ -57,7 +51,6 @@ public class Main {
             consumerRunnerPool.submit(consumer);
         }
 
-        // 2. Start LOW Priority Consumers (1 Consumers)
         for (int i = 0; i < LOW_WORKERS; i++) {
             KafkaEmailConsumer consumer = new KafkaEmailConsumer(
                     LOW_TOPIC, LOW_GROUP, i, lowWorkers,
@@ -82,11 +75,10 @@ public class Main {
 
             try {
                 // 3. Wait long enough for CURRENT tasks (HTTP requests) to finish.
-                // CHANGE: Increased from 5 to 15 seconds to exceed HTTP timeout (10s).
                 if (!highWorkers.awaitTermination(15, TimeUnit.SECONDS)) highWorkers.shutdownNow();
                 if (!lowWorkers.awaitTermination(15, TimeUnit.SECONDS)) lowWorkers.shutdownNow();
 
-                // Don't forget to wait for the Consumer Runners too!
+                // Shutdown Consumer Runners too!
                 if (!consumerRunnerPool.awaitTermination(5, TimeUnit.SECONDS)) consumerRunnerPool.shutdownNow();
 
             } catch (InterruptedException e) {
