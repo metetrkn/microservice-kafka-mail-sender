@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor // Lombok generates constructor for 'emailSender' injection
+@RequiredArgsConstructor 
 public class EmailConsumer {
 
     private final EmailSender emailSender;

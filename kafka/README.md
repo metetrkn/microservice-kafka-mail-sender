@@ -16,6 +16,13 @@ Output: Metrics and logs are stored in the TEST RESULTS directory. There are thr
 
 ---
 
+## How to utilize
+ 1- Check the test cases in TEST-CASE/ to observe the parameters and their effects on performance.
+ 2- You may retest the same parameters—or try additional ones—to gather further insights.
+
+
+---
+
 ## Refined Insights from tests
 - 1> Maintain a 1:1:1 Ratio Ensure 1 partition = 1 consumer = 1 thread for maximum resource utilization.
 - 2> Maximize Batch Sizes within Global Limits Target large batches, but strictly cap total processing capacity: (Total High Consumers × High Batch) + (Total Low Consumers × Low Batch) < 800
@@ -112,8 +119,8 @@ TEST RESULTS/
 
 ## Prerequisites
 - **Java SDK 17** and **Maven** for building and running producer/consumer modules.
-- **Python 3.14** for log analysis.
-- **Kafka** cluster running and accessible.
+- **Python 3.14** and related import libraries for log analysis.
+- **Kafka** cluster or docker running and accessible.
 - **Email server** Wiremock Docker image wiremock/wiremock:latest
 ---
 
@@ -136,6 +143,7 @@ cd javaConsumer/javaConsumer
 mvn clean package
 java -cp target/classes org.consumer.Main
 or simply run Main.java from IDE
+OBS!: Running the consumer first is generally considered best practice, even though published messages are logged in Kafka partitions. Starting the consumer first can improve performance. Kafka consumers continue to run and process messages in partitions until they crash or are explicitly closed.
 ```
 
 ### 4. Analyze Logs

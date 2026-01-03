@@ -21,7 +21,7 @@ public class EmailSender {
 
     private final String mailgunUrl;
     private final String apiKey;
-    private final String defaultFrom; // Renamed for clarity
+    private final String defaultFrom; 
     private final HttpClient client;
 
     public EmailSender(@Value("${mail.provider.url}") String mailgunUrl,
@@ -36,12 +36,11 @@ public class EmailSender {
     }
 
     public void sendEmail(EmailDTO emailDto) {
-        // 1. Determine "From" (Use DTO if available, else default)
         String finalFrom = (emailDto.getFrom() != null && !emailDto.getFrom().isEmpty())
                 ? emailDto.getFrom()
                 : defaultFrom;
 
-        // 2. Build form data for WireMock/Mailgun
+        // Build form data for WireMock/Mailgun
         String formData = buildFormData(finalFrom, emailDto.getTo(), emailDto.getSubject(), "Body content here...");
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -51,7 +50,7 @@ public class EmailSender {
                 .POST(HttpRequest.BodyPublishers.ofString(formData))
                 .build();
 
-        // 3. Send and Log exactly what you requested
+        // Send and Log exactly what you requested
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
                     if (response.statusCode() == 200) {
@@ -64,7 +63,7 @@ public class EmailSender {
                                 emailDto.getSubject(),
                                 lag
                         );
-                        // ------------------------
+          
 
                     } else {
                         String errorMsg = String.format("Error, Mail Provider failed. Status: %d | Body: %s", response.statusCode(), response.body());

@@ -4,7 +4,6 @@ from collections import defaultdict
 import json
 import os
 
-# File Paths
 STATE_FILE = 'state.json'
 INPUT_LOG_FILE = r'C:/Users/mete/Desktop/staj/rqueue/rqueu-consumer/logs/email-consumer.log'
 OUTPUT_CSV_FILE = 'log_report.csv'
@@ -40,7 +39,6 @@ def analyze_logs_to_csv(input_file, output_file):
     )
 
     # 2. Regex for Concurrency Settings
-    # Matches: 🚀 Starting HighConsumers. Concurrency range: 5-10
     concurrency_pattern = re.compile(
         r"Starting\s+(?P<type>High|Low)Consumers.*?Concurrency range:\s*(?P<range>[\d\-]+)",
         re.IGNORECASE
@@ -56,7 +54,6 @@ def analyze_logs_to_csv(input_file, output_file):
     print(f"Processing file: {input_file}...")
 
     try:
-        # READ LOGS
         with open(input_file, 'r', encoding='utf-8') as f:
             for line in f:
                 # A. Count global errors
@@ -77,18 +74,16 @@ def analyze_logs_to_csv(input_file, output_file):
                     lag_ms = int(email_match.group('lag'))
                     subject_stats[subject].append(lag_ms)
 
-        # WRITE CSV
         file_exists = os.path.isfile(output_file) and os.path.getsize(output_file) > 0
 
         with open(output_file, 'a', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
 
-            # Write Header
             if not file_exists:
                 writer.writerow([
                     'report_id', 
                     'subject', 
-                    'concurrency',  # New Column
+                    'concurrency',  
                     'avg_time(sc)', 
                     'max_time(sc)', 
                     'total_mails', 
@@ -99,12 +94,9 @@ def analyze_logs_to_csv(input_file, output_file):
                 for subject, times_ms in subject_stats.items():
                     count = len(times_ms)
                     
-                    # Calculations
                     avg_s = (sum(times_ms) / count) / 1000.0
                     max_s = max(times_ms) / 1000.0
                     
-                    # Determine Concurrency based on Subject
-                    # Mapping: VIP -> High, STANDARD -> Low
                     current_concurrency = "Unknown"
                     if "VIP" in subject.upper():
                         current_concurrency = concurrency_map.get('High', 'Unknown')
