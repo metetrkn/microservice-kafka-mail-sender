@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.context.ConfigurableApplicationContext; // <--- NEW IMPORT
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -55,7 +55,6 @@ public class RqueueProducerRunner implements CommandLineRunner {
 
         executor.shutdown();
 
-        // Wait for tasks to finish
         if (executor.awaitTermination(7, TimeUnit.MINUTES)) {
             log.info("All messages sent successfully.");
         } else {
@@ -64,7 +63,6 @@ public class RqueueProducerRunner implements CommandLineRunner {
 
         log.info("=== WORKER FINISHED - SHUTTING DOWN ===");
 
-        // --- THE KILL SWITCH ---
         // This closes Redis connections and kills the app gracefully
         SpringApplication.exit(context, () -> 0);
         System.exit(0);

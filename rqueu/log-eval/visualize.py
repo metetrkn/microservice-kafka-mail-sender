@@ -2,11 +2,9 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# 1. Load Data
 df = pd.read_csv('log_report.csv')
 
 # --- PRE-PROCESSING ---
-# Rename STANDARD to STD
 df['subject'] = df['subject'].replace({'STANDARD': 'STD'})
 
 df['report_id'] = df['report_id'].astype(str)
@@ -26,12 +24,8 @@ ax4 = fig.add_subplot(gs[1, 1])
 
 # Helper function to style legends
 def style_legend(ax):
-    # loc='upper right': Anchor the top-right corner of the legend...
-    # bbox_to_anchor=(1, -0.12): ...to a point slightly BELOW the x-axis (y < 0).
-    # This places it nicely under the axis labels on the right side.
     ax.legend(loc='upper right', bbox_to_anchor=(1, -0.12), 
               prop={'size': 15}, title=None, frameon=False, ncol=2) 
-              # Added ncol=2 to make it flatter/wider if needed, or remove for vertical
 
 # --- Graph 1: Max Time ---
 sns.barplot(data=df, x='report_id', y='max_time(sc)', hue='subject', 
@@ -61,7 +55,6 @@ style_legend(ax3)
 sns.despine(left=True, bottom=True)
 
 # --- Graph 4: Concurrency Range ---
-# 1. Plot MAX
 sns.barplot(data=df, x='report_id', y='max_conc', hue='subject', 
             palette='magma', edgecolor='white', linewidth=0, ax=ax4, dodge=True)
 
@@ -80,7 +73,6 @@ sns.despine(left=True, bottom=True)
 
 # --- Final Layout Adjustments ---
 plt.tight_layout()
-# Increased hspace to 0.5 to give the legends under the top charts enough room
 plt.subplots_adjust(top=0.9, hspace=0.5, wspace=0.2) 
 
 plt.show()

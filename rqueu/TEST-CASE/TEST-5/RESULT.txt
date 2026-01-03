@@ -1,32 +1,29 @@
-TOTAL EVAULATION OF TESTS FOR CONCURRENCY NUMBERS
+Total Evaluation of Tests for Concurrency Levels
 
 Test1-
-queu	Usage		Error		concurrency	avg_time	max_time	
-high	100		0		5-10		1.19		1.96		
-low	1000		0		1-2		51.90		103.73		
+queu	num_mails		Error		concurrency	avg_time	max_time	
+high	100				0			5-10		1.19		1.96		
+low		1000			0			1-2			51.90		103.73		
 
 Test2-
-queu	Usage		Error		concurrency	avg_time	max_time
-high	100		0		5-10		1.09		1.77
-low	1000		0		5-10		9.11		18.37
+queu	num_mails		Error		concurrency	avg_time	max_time
+high	100				0			5-10		1.09		1.77
+low		1000			0			5-10		9.11		18.37
 
 Test3-
-queu	Usage		Error		concurrency	avg_time	max_time	
-high	100		0		10-20		0.45		0.60		
-low	1000		0		5-10		8.83		18.09		
-
+queu	num_mails		Error		concurrency	avg_time	max_time	
+high	100				0			10-20		0.45		0.60		
+low		1000			0			5-10		8.83		18.09		
 
 Test4-
-queu	Usage		Error		concurrency	avg_time	max_time	
-high	100		0		10-20		0.94		1.19		
-low	1000		0		10-20		4.08		7.96		
-
+queu	num_mails		Error		concurrency	avg_time	max_time	
+high	100				0			10-20		0.94		1.19		
+low		1000			0			10-20		4.08		7.96		
 
 Result:
-	- Our primary task to create high thoughput system for HIGH mails and
-	Test3 returns the best results for high mails and also not the most resource usage.
-	CSV files graph evulation also shows that there is drastic decrease in exectuion time 
-	from test2 to test3 but there is allmost no change from 3 to 4.
+	- Our primary goal was to create a high-throughput system for high-priority emails.
+	- Test 3 produced the best results for high-priority emails while not consuming the most system resources.
+	- The CSV file graph evaluation also shows a drastic decrease in execution time from Test 2 to Test 3, with almost no change between Test 3 and Test 4.
 
 BEST USE CASE is TEST-3!
 
