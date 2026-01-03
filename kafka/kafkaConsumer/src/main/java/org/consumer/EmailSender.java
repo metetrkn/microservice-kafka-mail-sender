@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class EmailSender {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailSender.class);
-    private static final String MAILGUN_URL = "http://localhost:8080/v1/send-email";
+    private static final String WIREMOCK_URL = "http://localhost:8080/v1/send-email";
     private static final String API_KEY = "api:key-fake";
     private static final String FROM_EMAIL = "sender@example.com";
 
@@ -25,14 +25,14 @@ public class EmailSender {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    // 1. UPDATE: Add topic and consumerId to the data structure
+
     public static class EmailRequest {
         public String to;
         public String subject;
         public String body;
         public long creationTime;
-        public String topic;      // NEW
-        public int consumerId;    // NEW
+        public String topic;
+        public int consumerId;
 
         public EmailRequest(String to, String subject, String body, long creationTime, String topic, int consumerId) {
             this.to = to;
@@ -58,7 +58,7 @@ public class EmailSender {
         String formData = buildFormData(email.to, email.subject, email.body);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(MAILGUN_URL))
+                .uri(URI.create(WIREMOCK_URL))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString(API_KEY.getBytes()))
                 .POST(HttpRequest.BodyPublishers.ofString(formData))

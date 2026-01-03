@@ -1,35 +1,24 @@
-Findout if increasing only partitons changes performance meaningfully
-
-THIS TEST REPERATED 3 TIMES for each scenerio (TOTAL:6)
+Objective: Assess performance impact of partiton count. Method: 3 repetitions across 2 scenarios (6 total tests).
 
 PARAMETERS that is used for compare
 scenerio-1
-(1 Broker) 									
-topic		RealUsage	Partitions	Consumers	Threads		Batch		query_que_ms		connectionTimeOut	Read/RequestTimeout	Replicion Factor	cpu     memory   performance_monitor
-high-pace	1000		4		4		4		5		50			10 sec			10 sec			1			10	45	 10-20
-low-pace	10000		4		4		4		50		1000			10 sec			10 sec			1			10	45	 10-20
+(1 Broker) 									                                                                                                        <BEFORE TEST PARAMETERS>            
+topic		num_mail	Partitions	Consumers	Threads		Batch		query_que_ms		connection_time_out	request_timeout	replicion_factor	cpu     memory   performance_monitor[0-100]
+high-pace	1000		4		    4		    4		    5		    50			        10 sec			    10 sec			1			        10%	    45%	     10-20
+low-pace	10000		4		    4		    4		    50		    1000			    10 sec			    10 sec			1			        10%	    45%	     10-20
 
 scnerio-2
-(1 Broker) 									
-topic		RealUsage	Partitions	Consumers	Threads		Batch		query_que_ms		connectionTimeOut	Read/RequestTimeout	Replicion Factor	cpu     memory   performance_monitor
-high-pace	1000		8		4		4		5		50			10 sec			10 sec			1			10	45	 10-20
-low-pace	10000		8		4		4		50		1000			10 sec			10 sec			1			10	45	 10-20
+(1 Broker) 									                                                                                                        <BEFORE TEST PARAMETERS>            
+topic		num_mail	Partitions	Consumers	Threads		Batch		query_que_ms		connection_time_out	request_timeout	replicion_factor	cpu     memory   performance_monitor[0-100]
+high-pace	1000		8		    4		    4		    5		    50			        10 sec			    10 sec			1			        10%	    45%	     10-20
+low-pace	10000		8		    4		    4		    50		    1000			    10 sec			    10 sec			1			        10%	    45%	     10-20
 
-UNDERSTANDING TEST
-report id: 0, 1, 2 are the result of the 1st test made with the same paremeters
-report id: 3, 4, 5 are the result of 2nd test made with new parameters
-0, 1, 2 are the same test repeated, 3, 4, 5 are the new tests with new paremeter repeated 
+Test Structure & Observation
+Baseline (IDs 0–2): Three repetitions of the initial configuration.
+New Parameters (IDs 3–5): Three repetitions of the modified configuration.
 
-While consumers continues to run (with the same parameters), results tends to be better.
-It should be result of cashing or a similar system, keep this in mind.
-
-COMPARE report_id_0,1,2 group with report_id_3,4,5 group
-
-EVAULATION OF TEST
-This test made to findout if increasing only partions numbers for each consumer affect performance
-RESULT: I have doubled partions for each topic(4 to 8),
-
-there is performance decrease
+Note: Performance consistently improves across repetitions (e.g., Run 2 > Run 0), likely due to system warm-up or caching.
+Objective: Compare the Baseline group against the New Parameters group, taking this warm-up trend into account to ensure a fair analysis.
 
 1. High Priority Mails (high-priority-mails)
 Average Execution Time: Increased by 38.70% (Rose from 1.71s to 2.37s).
@@ -39,9 +28,7 @@ Max Execution Time: Increased by 35.93% (Rose from 2.74s to 3.73s).
 Average Execution Time: Increased by 15.40% (Rose from 2.27s to 2.62s).
 Max Execution Time: Increased by 15.29% (Rose from 3.56s to 4.11s).
 
-RESULT:
-Increasing partions by it self DECREASE the performance drastically
-Each consumer (in their own topic group) shared similar workload as it should be 
-
-
-   
+Result: 
+Increasing partitions in isolation caused a drastic performance decrease.
+Cause: High overhead from partition rebalancing (dynamic assignment of consumers).
+Workload distribution remained balanced across consumers as it should be.

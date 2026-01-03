@@ -100,7 +100,6 @@ public class KafkaEmailConsumer implements Runnable {
                     continue;
                 }
 
-                // Async Send (Waits for completion before next poll)
                 CompletableFuture.runAsync(() -> {
                     EmailSender.sendBatch(emailBatch);
                 }, emailExecutor).join();
